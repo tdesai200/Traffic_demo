@@ -1,0 +1,51 @@
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# -----------------------
+# Jupyter Notebook
+# -----------------------
+.ipynb_checkpoints/
+
+# -----------------------
+# YOLO / Training Outputs
+# -----------------------
+runs/
+*.pt
+*.onnx
+
+# -----------------------
+# Data (DO NOT PUSH DATASETS)
+# -----------------------
+data/
+datasets/
+*.jpg
+*.png
+*.jpeg
+
+# -----------------------
+# Outputs / Generated Files
+# -----------------------
+outputs/
+*.csv
+
+# -----------------------
+# OS Files
+# -----------------------
+.DS_Store
+Thumbs.db

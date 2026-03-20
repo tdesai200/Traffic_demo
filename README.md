@@ -1,59 +1,111 @@
 # TrafficVision
 
-This repository contains a proof-of-concept (POC) for vehicle detection and traffic flow classification using a pretrained YOLOv8 model.
+TrafficVision is a traffic-flow classification project built on top of YOLOv8. It detects vehicles in traffic-camera still images, converts detections into vehicle counts, and classifies each scene as `Free`, `Moderate`, or `Heavy`.
 
-## Project Phases
+The project evolved across three phases:
+- Phase 1: proof-of-concept detection and rule-based traffic classification
+- Phase 2: labeled calibration, threshold tuning, and quantitative evaluation
+- Phase 3: YOLOv8 fine-tuning and downstream re-calibration on updated vehicle counts
 
-### Initial Phase
+## Current Results
 
-1. **Dataset preparation**
-   - The `data/Vehicle_Detection_Image_Dataset` contains training and validation images as well as annotation files in YOLO format.
-   - A `data.yaml` file defines class names.
+### Traffic-State Classification
 
-2. **Detection & Visualization Demo**
-   - Developed `demo.ipynb` to load the YOLO model (`yolov8n.pt`) and run inference on a sample of validation images.
-   - Vehicles (car, bus, truck) are counted and simple thresholds classify traffic into three categories: Free-Flowing, Moderate, Heavy.
-   - Results are visualized with annotated images and textual summaries.
+Phase 2 baseline on 90 labeled images:
+- Accuracy: `70.0%`
+- Macro F1: `0.6555`
+- Moderate-class F1: `0.4615`
 
-3. **Traffic classification logic**
-   - Thresholds hard‑coded as:
-     - Free-Flowing: 0–10 vehicles
-     - Moderate: 11–30 vehicles
-     - Heavy: 31+ vehicles
-   - Utility functions `classify_traffic` and image plotting were included.
+Phase 3 after fine-tuning and re-calibration:
+- Accuracy: `77.8%`
+- Macro F1: `0.7016`
+- Moderate-class F1: `0.4000`
 
-### Second Phase
+Best traffic-state thresholds after fine-tuning:
+- `Free <= 8` vehicles
+- `Moderate <= 14` vehicles
+- `Heavy >= 15` vehicles
 
-1. **Calibration dataset creation**
-   - Added interactive notebook cells to label a random subset of validation images with true traffic states (Free/Moderate/Heavy).
-   - Labels saved to `outputs/traffic_labels.csv`.
+### Fine-Tuned Detector
 
-2. **Vehicle count extraction**
-   - Wrote `count_vehicles` helper that filters detections by confidence and bounding box area.
-   - Generated labeled counts (`outputs/labeled_counts.csv`) by running detector on labeled images.
+Held-out test split metrics from `fine_tune_local.ipynb`:
+- Precision: `0.898`
+- Recall: `0.901`
+- mAP@0.50: `0.964`
+- mAP@0.50:0.95: `0.701`
 
-3. **Threshold tuning**
-   - Performed grid search over plausible free and moderate thresholds to maximize macro‑F1 score on calibration set.
-   - Computed best thresholds and documented them in notebook.
+## Pipeline
 
-4. **Evaluation**
-   - Applied tuned thresholds to count data, produced classification report and confusion matrix.
-   - Updated visualization cells to use calibrated thresholds and show the improved pipeline.
+The current workflow is:
+1. Load a traffic-camera image.
+2. Run YOLOv8 vehicle detection.
+3. Count detected vehicles after confidence filtering.
+4. Map the count to `Free`, `Moderate`, or `Heavy` using calibrated thresholds.
+5. Evaluate with confusion matrices, accuracy, and F1 metrics.
 
-5. **Next steps & future work**
-   - Suggests fine-tuning YOLO on the custom dataset and re-calibrating thresholds for final accuracy metrics.
+## Repository Layout
 
-## Repository Structure
+- `Traffic_Flow_Project_Report.md`: project report with phase-by-phase summary and metrics
+- `src/traffic-flow-reporter-poc/demo.ipynb`: proof-of-concept and calibrated traffic classification workflow
+- `src/traffic-flow-reporter-poc/fine_tune_local.ipynb`: local fine-tuning, detector evaluation, and before/after comparison
+- `src/traffic-flow-reporter-poc/requirements.txt`: Python dependencies
+- `src/traffic-flow-reporter-poc/outputs/`: generated label/count CSV files
+- `src/traffic-flow-reporter-poc/runs/detect/`: YOLO training and validation artifacts
+- `data/Vehicle_Detection_Image_Dataset/`: original detection dataset and metadata
+- `data/Vehicle_Detection_Image_Dataset_FineTune/`: dataset split used for fine-tuning
 
-- `data/` – dataset and metadata
-- `src/traffic-flow-reporter-poc/` – notebook, model weights, outputs
-- `outputs/` – generated CSVs with labels and counts
+## Key Files and Outputs
 
-## Usage
+Generated during the notebook workflows:
+- `src/traffic-flow-reporter-poc/outputs/traffic_labels.csv`
+- `src/traffic-flow-reporter-poc/outputs/labeled_counts.csv`
+- `src/traffic-flow-reporter-poc/before_after_confusion_matrices.png`
+- `src/traffic-flow-reporter-poc/before_after_metrics.png`
 
-1. Activate Python environment and install requirements from `src/traffic-flow-reporter-poc/requirements.txt`.
-2. Run `demo.ipynb` sequentially to reproduce detection, calibration, and evaluation steps.
+Fine-tuning artifacts are saved under:
+- `src/traffic-flow-reporter-poc/runs/detect/`
 
----
+## Setup
 
-This README documents the project's evolution from an initial demonstration to a validated, data-driven traffic classification system.
+1. Create or activate a Python virtual environment.
+2. Install dependencies from `src/traffic-flow-reporter-poc/requirements.txt`.
+3. Open the notebooks from `src/traffic-flow-reporter-poc/`.
+
+Example:
+
+```powershell
+cd src/traffic-flow-reporter-poc
+pip install -r requirements.txt
+```
+
+## How to Reproduce
+
+### Phase 1 / Phase 2 Workflow
+
+Run `src/traffic-flow-reporter-poc/demo.ipynb` to:
+- load the pretrained YOLOv8 model
+- run inference on traffic images
+- label traffic-state samples
+- generate `traffic_labels.csv` and `labeled_counts.csv`
+- calibrate traffic thresholds
+- evaluate the traffic-state classifier
+
+### Phase 3 Workflow
+
+Run `src/traffic-flow-reporter-poc/fine_tune_local.ipynb` to:
+- fine-tune `yolov8n.pt` on the fine-tuning dataset
+- evaluate the detector on the held-out test split
+- regenerate vehicle counts using the fine-tuned model
+- perform grid search for the best traffic-state thresholds
+- compare Phase 2 vs Phase 3 confusion matrices and metrics
+
+
+## Notes
+
+- The project currently uses still images rather than video streams.
+- Traffic-state quality depends on both detector quality and threshold calibration.
+- `Moderate` remains the hardest class because it lies near the decision boundary between low and high traffic density.
+
+## Summary
+
+The current repository includes a calibrated evaluation pipeline, a fine-tuned detector, and measured improvements in end-to-end traffic-state classification performance.
